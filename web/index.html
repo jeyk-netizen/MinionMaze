@@ -116,13 +116,12 @@
     #boosts .spawn { height: 54px; gap: 0; font-size: 10px; }
     #boosts .spawn > div:first-child { font-size: 15px !important; line-height: 1.1; }
   }
-  /* Narrow phones: keep the enemy-base label readable and let the wave pill wrap instead of colliding with it. */
-  @media (max-width: 360px) {
-    .hud .bar { min-width: 112px; }
-    .hud .bar .lbl { white-space: nowrap; gap: 4px; }
-    .hud .row { gap: 6px; }
-    .hud .pill.tiny { padding: 4px 8px; font-size: 10px; line-height: 1.15; }
-  }
+  /* The game column is at most 430px wide, so the top HUD is always tight: keep the base label on one
+     line with room for its number, and let the wave pill wrap instead of colliding with it. */
+  .hud .bar { min-width: 118px; }
+  .hud .bar .lbl { white-space: nowrap; gap: 4px; }
+  .hud .row { gap: 6px; }
+  .hud .pill.tiny { padding: 4px 8px; font-size: 10px; line-height: 1.15; }
   .icon-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.12); display: grid; place-items: center; font-size: 14px; flex: none; }
 
   .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 20; }
