@@ -104,6 +104,24 @@
   .spawn { flex: none; width: 64px; height: 84px; border-radius: 12px; background: rgba(64,166,255,0.35); border: 1.5px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 11px; font-weight: 700; }
   .spawn[disabled] { background: rgba(255,255,255,0.08); opacity: 0.5; }
   .spawn.empty { border-style: dashed; background: transparent; color: var(--muted); font-size: 18px; }
+  /* The four boosts share the row so none hides off the edge of a small phone. */
+  #boosts .spawn { flex: 1 1 0; min-width: 64px; }
+  /* Short screens (landscape phones): let the battlefield shrink and compact the bottom HUD so the
+     boosts and Rush stay on screen. */
+  @media (max-height: 560px) {
+    .canvas-wrap { min-height: 0; }
+    .hud { padding: 4px 12px; gap: 4px; }
+    #lineup { display: none; }
+    #lineup + #rushBtn { margin-left: auto; }
+    #boosts .spawn { height: 54px; gap: 0; font-size: 10px; }
+    #boosts .spawn > div:first-child { font-size: 15px !important; line-height: 1.1; }
+  }
+  /* The game column is at most 430px wide, so the top HUD is always tight: keep the base label on one
+     line with room for its number, and let the wave pill wrap instead of colliding with it. */
+  .hud .bar { min-width: 118px; }
+  .hud .bar .lbl { white-space: nowrap; gap: 4px; }
+  .hud .row { gap: 6px; }
+  .hud .pill.tiny { padding: 4px 8px; font-size: 10px; line-height: 1.15; }
   .icon-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.12); display: grid; place-items: center; font-size: 14px; flex: none; }
 
   .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 20; }
@@ -139,7 +157,6 @@
   @media (prefers-reduced-motion: reduce) { .coach-hi { animation: none; } }
   .toast { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--surface-2); padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: 13px; z-index: 30; box-shadow: 0 8px 24px rgba(0,0,0,0.4); pointer-events: none; }
 
-  /* Appearance editor */
   .tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab { flex: none; padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,0.08); font-weight: 700; font-size: 12px; }
@@ -149,18 +166,6 @@
   .armory-tabs { flex: none; position: sticky; top: -16px; z-index: 5; margin: -6px -16px 0; padding: 8px 16px; background: var(--ground); border-bottom: 1px solid var(--line); }
   .armory-tabs .tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; min-width: 62px; font-size: 11px; }
   .armory-tabs .tab .ic { font-size: 16px; font-family: var(--emoji); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
-  .cos { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; border-radius: 12px; background: var(--surface); border: 1.5px solid transparent; font-size: 11px; font-weight: 700; text-align: center; }
-  .cos.on { border-color: var(--gold); }
-  .cos .price { color: var(--gold); font-weight: 700; }
-  .cos .owned { color: var(--muted); font-weight: 500; }
-  .cos .name { max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .swatch { width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25); }
-  .looks { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
-  .looks::-webkit-scrollbar { display: none; }
-  .look { flex: none; width: 128px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; border-radius: 14px; background: var(--surface); text-align: center; }
-  .look .name { font-weight: 700; font-size: 12px; }
-  .look .tag { font-size: 10px; color: var(--muted); font-weight: 500; letter-spacing: 0; text-wrap: balance; }
 </style>
 
 <div class="phone" id="phone">
@@ -511,9 +516,7 @@ const BOOSTS = [
 const boostCost = (b, n) => Math.round(b.base * Math.pow(b.growth, n));
 // Commander level: every match earns XP; each level lifts all coin rewards a little and pays a bonus.
 const XP = { kill: 5, win: r => 60 + 15 * r, loss: 20, perLevel: 0.04, levelBonus: l => 40 * l, need: l => Math.round(60 * Math.pow(l, 1.2)) };
-const unlockedAtLevel = level => MINIONS.filter(m => m.lvl <= level);
 const classUnlockLevel = cls => Math.min(...MINIONS.filter(m => m.cls === cls).map(m => m.lvl));
-const nextUnlock = level => MINIONS.filter(m => m.lvl > level).sort((a, b) => a.lvl - b.lvl)[0] || null;
 const TIERS = [[1, 'Recruit'], [3, 'Private'], [5, 'Corporal'], [8, 'Sergeant'], [12, 'Lieutenant'], [16, 'Captain'], [21, 'Major'], [27, 'Colonel'], [34, 'General'], [42, 'Legend']];
 const TIER_ICONS = ['🎖️', '🔰', '🏅', '⭐', '🌟', '⚔️', '🛡️', '🦅', '👑', '💎'];
 // Daily loop: play every day to climb; stay away and XP decays exponentially after a day of grace.
@@ -694,13 +697,6 @@ const openSlots = () => Math.max(0, P.squadSlots - P.squad.length);
 const lineup = () => { const sq = squadMinions(); return sq.length ? Array.from({ length: P.squadSlots }, (_, i) => sq[i % sq.length]) : []; };
 const playerBaseHP = () => B.playerBaseHP * (1 + bonus('baseHealth'));
 const styleFor = mid => Object.assign({}, BASE_STYLE, TYPE_STYLE[mid] || {}, P.styles[mid] || {});
-const ownsCosmetic = id => COS[id].price === 0 || P.ownedCosmetics.includes(id);
-function buyCosmetic(id) {
-  const c = COS[id]; if (ownsCosmetic(id)) return true;
-  if (P.coins < c.price) return false;
-  P.coins -= c.price; P.ownedCosmetics.push(id); save(); return true;
-}
-function setStyle(mid, layer, id) { if (!ownsCosmetic(id)) return; (P.styles[mid] = P.styles[mid] || {})[layer] = id; save(); }
 
 const classBonus = cls => UPGRADES.filter(u => u.stat === 'class' && u.cls === cls).reduce((a, u) => a + upgradeBonus(u), 0);
 function computeStats(m, gear, bon, clsBonus) {
@@ -1050,7 +1046,7 @@ function paintPortraits() {
   for (const cv of screen.querySelectorAll('canvas.pc')) {
     const spec = PC.get(cv.id); if (!spec) continue;
     const c = cv.getContext('2d'); c.setTransform(2, 0, 0, 2, 0, 0); c.clearRect(0, 0, cv.width, cv.height);
-    const r = spec.size / 2, ab = spec.gear.find(g => g.slot === 'ability');
+    const r = spec.size / 2, ab = spec.gear.filter(g => g.ability).pop();
     drawCharacter(c, cv.width / 4, cv.height / 4 - r * 0.05, r, spec.style, { team: spec.enemy ? 'enemy' : 'player', armor: spec.gear.reduce((a, g) => a + g.armor, 0), gear: spec.gear, sym: spec.badge ? spec.m.sym : null, ability: ab ? ab.ability : null, cls: spec.m.cls, facing: 1, shine: unitShine(spec.enemy ? null : spec.m.id, spec.m.rarity, spec.gear), time: 1.3, look: lookFor(spec.m.name, spec.m.rarity) });
   }
   for (const id of [...PC.keys()]) if (!document.getElementById(id)) PC.delete(id);
@@ -1191,7 +1187,6 @@ class Sim {
 // ---------- Enemy commander (mirrors EnemyAI.swift) ----------
 class EnemyAI {
   constructor(round, level, seed) { this.round = round; this.level = level; this.rnd = mulberry32(seed); this.count = 0; }
-  /// Rounds compound: +15% enemy health and damage per round, and one more enemy per wave every third round.
   /// Rounds ramp in even steps (+8% per round) instead of compounding, so later rounds stay reachable.
   static difficulty(r) { return (1 + 0.08 * Math.max(0, r - 1)) * B.practice(r); }
   static extraPerWave(r) { return Math.floor(Math.max(0, r - 1) / 3); }
@@ -1473,7 +1468,7 @@ function startBattle(round) {
   battle.lineup.forEach(m => { const d = document.createElement('div'); d.className = 'slot-card'; d.style.cssText = 'width:44px;height:52px;border-color:' + RARITY[m.rarity].color; d.innerHTML = portrait(m, gearFor(m.id), 13); strip.appendChild(d); });
   const tray = $('#boosts');
   for (const b of BOOSTS) {
-    const el = document.createElement('button'); el.className = 'spawn'; el.style.width = '84px'; el.dataset.boost = b.id; el.title = b.blurb;
+    const el = document.createElement('button'); el.className = 'spawn'; el.dataset.boost = b.id; el.title = b.blurb;
     el.innerHTML = `<div style="font-size:20px;font-family:var(--emoji)">${b.sym}</div><div class="name">${b.name}</div><div class="tiny num" data-cost></div>`;
     el.onclick = () => buyBoost(b); tray.appendChild(el);
   }
@@ -1518,10 +1513,12 @@ function buyBoost(b) {
   if (P.tut === 2) tutStep(3);
 }
 function pauseBattle() {
-  battle.paused = true;
+  // Once the match is decided the results screen is about to replace the battle: no pause menu then.
+  if (!battle || battle.result || battle.paused) return;
+  const bt = battle; bt.paused = true;
   modal('Paused', '', [
-    { label: 'Resume', style: 'primary', onClick: () => { battle.paused = false; } },
-    { label: 'Forfeit round', onClick: () => { battle.paused = false; finish(false); } },
+    { label: 'Resume', style: 'primary', onClick: () => { bt.paused = false; } },
+    { label: 'Forfeit round', onClick: () => { bt.paused = false; finish(false); } },
   ]);
 }
 function finish(won) {
@@ -1557,7 +1554,8 @@ function frame(bt, ts) {
     for (const q of bt.queue.filter(q => q.delay <= 0)) bt.sim.spawn(q.type, q.gear, q.stats, q.team, q.style, q.lane, q.row);
     bt.queue = bt.queue.filter(q => q.delay > 0);
     bt.sim.update(dt);
-    bt.income += real * B.passive;   // coins trickle in real time, not fast-forwarded if (bt.income >= 1) { const n = Math.floor(bt.income); bt.income -= n; P.coins += n; }
+    bt.income += real * B.passive;   // coins trickle in real time, not fast-forwarded
+    if (bt.income >= 1) { const n = Math.floor(bt.income); bt.income -= n; P.coins += n; }
     for (const e of bt.sim.drain()) {
       if (e.t === 'died') bt.dying.push({ x: e.u.x, y: e.u.y, cls: e.u.type.cls, style: e.u.style, gear: e.u.gear, team: e.u.team, sym: e.u.type.sym, facing: e.u.facing, ability: e.u.stats.ability, t: 0, look: lookFor(e.u.type.name, e.u.type.rarity) });
       if (e.t === 'died' && e.killer === 'player') { bt.kills++; bt.killCoins += e.reward; P.coins += e.reward; bt.floats.push({ x: e.u.x, y: e.u.y, text: '+' + e.reward, color: '#ffd94d', ttl: 0.9, size: 0.75 }); }
@@ -2147,50 +2145,6 @@ function renderLoadout(m) {
   if ($('#fClear')) $('#fClear').onclick = () => { Object.assign(LOADOUT_FILTER, { owned: false, rarity: -1, stars: 0, best: '' }); refilter(); };
 
   screen.querySelectorAll('[data-eq]').forEach(b => b.onclick = () => { equip(b.dataset.eq ? GEAR_BY[b.dataset.eq] : null, b.dataset.slot, m.id); const y = screen.scrollTop; renderLoadout(m); screen.scrollTop = y; });
-}
-
-// -- Appearance editor
-let styleTab = 'hair';
-function renderStyle(m) {
-  const st = styleFor(m.id), worn = gearFor(m.id);
-  const lookCost = look => Object.values(look.style).reduce((a, id) => a + (ownsCosmetic(id) ? 0 : COS[id].price), 0);
-  const isLook = look => Object.entries(look.style).every(([k, v]) => st[k] === v);
-  show(`
-    <div class="topbar"><button class="icon-btn" id="back" aria-label="Back">←</button><h2>Appearance</h2>${walletHTML()}</div>
-    <div class="card center" style="display:flex;flex-direction:column;align-items:center;gap:4px">
-      ${portrait(m, worn, 72)}
-      <div style="font-size:18px;font-weight:700">${m.name}</div>
-      <div class="muted tiny">Every piece you pick is worn on the battlefield.</div>
-    </div>
-    <div class="section-title">Looks <span class="muted small">one tap, buys any missing pieces</span></div>
-    <div class="looks">${LOOKS.map((l, i) => { const cost = lookCost(l), on = isLook(l); return `<div class="look" style="${on ? 'outline:1.5px solid var(--gold)' : ''}">${portrait(m, worn, 26, { style: Object.assign({}, st, l.style), badge: false })}<div class="name">${l.name}</div><div class="tag">${l.tag}</div><button class="btn sm" data-look="${i}" ${on ? 'disabled' : ''}>${on ? 'Wearing' : cost ? '🪙 ' + cost : 'Apply'}</button></div>`; }).join('')}</div>
-    <div class="section-title">Piece by piece</div>
-    <div class="tabs">${LAYERS.map(l => `<button class="tab ${styleTab === l.id ? 'on' : ''}" data-tab="${l.id}">${l.name}</button>`).join('')}</div>
-    <div class="grid">${COSMETICS.filter(c => c.layer === styleTab).map(c => {
-      const on = st[styleTab] === c.id, owned = ownsCosmetic(c.id);
-      const preview = c.hex && (c.layer === 'skin' || c.layer === 'hairColor' || c.layer === 'outfit' || c.layer === 'cape')
-        ? `<div class="swatch" style="background:${c.hex}"></div>`
-        : c.layer === 'emblem' ? `<div class="swatch" style="display:grid;place-items:center;font-size:18px;font-family:var(--emoji)">${c.sym || '∅'}</div>`
-        : portrait(m, [], 18, { style: Object.assign({}, st, { [styleTab]: c.id }), badge: false });
-      return `<button class="cos ${on ? 'on' : ''}" data-cos="${c.id}">${preview}<div class="name">${c.name}</div><div class="${owned ? 'owned' : 'price'}">${on ? '✓ Wearing' : owned ? 'Owned' : '🪙 ' + c.price}</div></button>`;
-    }).join('')}</div>
-    <div class="muted tiny">Designs are original. Names and shapes are generic archetypes, not any specific franchise character.</div>
-  `);
-  $('#back').onclick = () => renderLoadout(m);
-  screen.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { styleTab = b.dataset.tab; const y = screen.scrollTop; renderStyle(m); screen.scrollTop = y; });
-  screen.querySelectorAll('[data-cos]').forEach(b => b.onclick = () => {
-    const id = b.dataset.cos, c = COS[id];
-    if (!ownsCosmetic(id)) { if (!buyCosmetic(id)) { toast('Not enough coins. Win rounds or watch an ad.'); return; } toast('Bought ' + c.name + ' for 🪙 ' + c.price); }
-    setStyle(m.id, c.layer, id); const y = screen.scrollTop; renderStyle(m); screen.scrollTop = y;
-  });
-  screen.querySelectorAll('[data-look]').forEach(b => b.onclick = () => {
-    const look = LOOKS[+b.dataset.look], cost = lookCost(look);
-    if (P.coins < cost) { toast('Need 🪙 ' + cost + ' for this look.'); return; }
-    for (const id of Object.values(look.style)) buyCosmetic(id);
-    for (const [layer, id] of Object.entries(look.style)) setStyle(m.id, layer, id);
-    toast(cost ? `${look.name} applied for 🪙 ${cost}` : `${look.name} applied`);
-    const y = screen.scrollTop; renderStyle(m); screen.scrollTop = y;
-  });
 }
 
 // -- Round select: replay any cleared round (rewards at 60% bonus, full loot roll and XP).
